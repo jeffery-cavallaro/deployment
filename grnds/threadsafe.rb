@@ -49,6 +49,15 @@ module Grnds
         attr_deep_reader(method, attribute, name)
         attr_deep_writer(method, attribute, name)
       end
+
+      # Routes method calls to a composite class instance that is not threadsafe in a synchronized fashion.
+      def route_to_attribute(attribute, *methods)
+        methods.each do |method|
+          define_method(method) do |*args, &block|
+            synchronize { instance_variable_get(attribute).send(method, *args, &block) }
+          end
+        end
+      end
     end
 
     def self.included(base)

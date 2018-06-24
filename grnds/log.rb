@@ -43,9 +43,15 @@ module Grnds
       DEFAULT_KEEP_FILES = 0
       DEFAULT_MAX_SIZE = 100 * 1024 * 1024 # 100Mb
 
+      # These attributes are maintained by the logger instance of the singleton.
       attr_deep_accessor(:program, :@logger, :progname)
       attr_deep_accessor(:threshold, :@logger, :level)
+
+      # These attributes are maintained by the singleton.
       attr_accessor :pid, :tid, :lineno, :timestamp, :milliseconds, :level
+
+      # These logger calls are exposed.
+      route_to_attribute(:@logger, :add, :fatal, :error, :warn, :info, :debug)
 
       # IO logging is minimal (message only) and is suitable for screen output.
       private def io_logging(program)
@@ -97,10 +103,6 @@ module Grnds
           install_formatter
           file_logging(program)
         end
-      end
-
-      %i[add fatal error warn info debug].each do |method|
-        define_method(method) { |*args, &block| synchronize { @logger.send(method, *args, &block) } }
       end
 
       private def install_formatter
