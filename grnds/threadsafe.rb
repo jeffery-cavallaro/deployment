@@ -12,9 +12,11 @@ module Grnds
   #        Otherwise, deadlock will occur.
   #
   module ThreadSafe
+    # Used for extending including class.
     module ClassMethods
+      # These methods define synchronized attribute accessors for the including class.
       def attr_reader(*names)
-        names.each { |name| define_method("#{name}") { synchronize { instance_variable_get("@#{name}") } } }
+        names.each { |name| define_method(name) { synchronize { instance_variable_get("@#{name}") } } }
       end
 
       def attr_writer(*names)
@@ -26,6 +28,26 @@ module Grnds
           attr_reader(name)
           attr_writer(name)
         end
+      end
+
+      # These methods define synchronized attribute accessors for a composite class that is not itself threadsafe.  For
+      # example, suppose class A contains an instance of class B using attribute name '@b'.  Also suppose that class B has an
+      # attribute '@c' that is accessed using accessor method ':c'.  To synchronize access to '@c' from an instance of A using
+      # an accessor named ':d', include the following line in A's class definition:
+      #
+      #    attr_deep_accessor(:d, :@b, :c)
+      #
+      def attr_deep_reader(method, attribute, name = method)
+        define_method(method) { synchronize { instance_variable_get(attribute).send(name) } }
+      end
+
+      def attr_deep_writer(method, attribute, name = method)
+        define_method("#{method}=") { |value| synchronize { instance_variable_get(attribute).send("#{name}=", value) } }
+      end
+
+      def attr_deep_accessor(method, attribute, name = method)
+        attr_deep_reader(method, attribute, name)
+        attr_deep_writer(method, attribute, name)
       end
     end
 

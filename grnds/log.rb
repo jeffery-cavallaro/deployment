@@ -43,6 +43,10 @@ module Grnds
       DEFAULT_KEEP_FILES = 0
       DEFAULT_MAX_SIZE = 100 * 1024 * 1024 # 100Mb
 
+      attr_deep_accessor(:program, :@logger, :progname)
+      attr_deep_accessor(:threshold, :@logger, :level)
+      attr_accessor :pid, :tid, :lineno, :timestamp, :milliseconds, :level
+
       # IO logging is minimal (message only) and is suitable for screen output.
       private def io_logging(program)
         @logger.progname = program
@@ -65,13 +69,9 @@ module Grnds
         @level = true
       end
 
-      private def install_formatter
-        @logger.formatter = proc { |*args| formatter(*args) }
-      end
-
       # Use to establish logging to STDERR by default (already synchronized by Singleton).
       def initialize
-        super()
+        super() # required
         @logger = Logger.new(STDERR)
         install_formatter
         io_logging(nil)
@@ -99,24 +99,6 @@ module Grnds
         end
       end
 
-      def program
-        synchronize { @logger.progname }
-      end
-
-      def program=(name)
-        synchronize { @logger.progname = name }
-      end
-
-      attr_accessor :pid, :tid, :lineno, :timestamp, :milliseconds, :level
-
-      def threshold
-        synchronize { @logger.level }
-      end
-
-      def threshold=(min_level)
-        synchronize { @logger.level = min_level }
-      end
-
       %i[add fatal error warn info debug].each do |method|
         define_method(method) { |*args, &block| synchronize { @logger.send(method, *args, &block) } }
       end
@@ -127,6 +109,10 @@ module Grnds
 
       def self.respond_to_missing?(*args)
         instance.respond_to?(*args)
+      end
+
+      private def install_formatter
+        @logger.formatter = proc { |*args| formatter(*args) }
       end
 
       private def formatter(severity, datetime, progname, message)
