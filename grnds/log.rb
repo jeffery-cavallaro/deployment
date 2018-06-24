@@ -2,8 +2,8 @@ module Grnds
   # Process Logging
   module Loggable
     require 'logger'
-    require 'singleton'
 
+    require 'grnds/singleton_extensions'
     require 'grnds/threadsafe'
 
     # The Loggable class provides a standardized logging capability via a singleton.  It is simply a wrapper to the standard
@@ -101,14 +101,6 @@ module Grnds
 
       %i[add fatal error warn info debug].each do |method|
         define_method(method) { |*args, &block| synchronize { @logger.send(method, *args, &block) } }
-      end
-
-      def self.method_missing(method, *args, &block)
-        instance.send(method, *args, &block)
-      end
-
-      def self.respond_to_missing?(*args)
-        instance.respond_to?(*args)
       end
 
       private def install_formatter

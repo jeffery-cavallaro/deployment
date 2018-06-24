@@ -13,7 +13,7 @@ module Grnds
   #
   module ThreadSafe
     # Used for extending including class.
-    module ClassMethods
+    module ThreadSafeClassMethods
       # These methods define synchronized attribute accessors for the including class.
       def attr_reader(*names)
         names.each { |name| define_method(name) { synchronize { instance_variable_get("@#{name}") } } }
@@ -52,7 +52,7 @@ module Grnds
     end
 
     def self.included(base)
-      base.extend ClassMethods
+      base.extend ThreadSafeClassMethods
     end
 
     def initialize
